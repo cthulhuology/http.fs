@@ -1,3 +1,4 @@
+#! /usr/bin/env gforth
 \ sample http server
 \ © 2013 David J. Goehrig <dave@dloh.org>
 
