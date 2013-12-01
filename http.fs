@@ -4,14 +4,19 @@
 
 require unix/socket.fs
 
+\ configuration settings
 4096 constant size		\ 1 page buffer sizes
+255 constant backlog		\ number of sockets to backlog
+8080 constant http-port		\ port we're listening on
+
+\ useful buffers
 create request size allot	\ create a big buffer for http requests
 0 value request:length
 create response size allot	\ create a big response buffer for http responses
 0 value response:length
 
 \ Configure the port we're listening on.
-8080 create-server value server
+http-port create-server value server
 
 \ The socket the client will use
 0 value client
@@ -89,8 +94,10 @@ create response size allot	\ create a big response buffer for http responses
 : http/404	\ this is an error page
 	s\" HTTP/1.1 404 Not Found\r\nContent-Length: 10\r\n\r\nNot Found\n" ;
 
-create route 4096 allot	\ path must be smaller than 4k because we only read 4k
-\ path to route
+\ path must be smaller than 256, because it is a counted string 0-255 chars
+create route 256 allot
+
+\ converts the path to a route, right now we only translate / to /.
 : path>route 
 	s" /" path path:length compare 0= if  
 		2 route c! 
@@ -101,26 +108,28 @@ create route 4096 allot	\ path must be smaller than 4k because we only read 4k
 		path route 1+ path:length cmove 
 	then ;
 
-
 \ tests if a route exists
 : route? ( -- true|false)
 	route find nip ;
 
-\ dispatch
+\ dispatch the route's method
 : dispatch route count evaluate ;
 
-: send-response
-	dup to response:length 		\ set the response length
-	response swap cmove		\ copy repond to response
-	response response:length client write-socket
+: read-request ( fd -- )
+	request size read-socket to request:length drop ;	\ drop the address of request buffer
+
+: parse-request  ( -- )
+	request request:length evaluate ;	\ note well request contains a forth string
+
+: send-response ( s-addr u -- )
+	client write-socket
 	client close-socket ;
 
 \ web server
 : serve begin
-	server 255 listen
+	server backlog listen
 	server accept-socket to client
-	client request size read-socket to request:length drop
-	request request:length evaluate
+	client read-request parse-request
 	path>route route? if dispatch else http/404 then
 	send-response
 again ;
