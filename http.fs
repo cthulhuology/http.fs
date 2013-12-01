@@ -115,11 +115,11 @@ create route 256 allot
 \ dispatch the route's method
 : dispatch route count evaluate ;
 
-: read-request ( fd -- )
-	request size read-socket to request:length drop ;	\ drop the address of request buffer
+: read-request ( fd -- s-addr u )
+	request size read-socket dup to request:length ;
 
-: parse-request  ( -- )
-	request request:length evaluate ;	\ note well request contains a forth string
+: parse-request  ( s-addr u -- )
+	evaluate ;	\ note well request contains a forth string
 
 : send-response ( s-addr u -- )
 	client write-socket
