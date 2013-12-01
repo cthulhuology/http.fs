@@ -108,7 +108,7 @@ create command 4096 allot	\ path must be smaller than 4k because we only read 4k
 		else drop
 			\ serve the index path if path is / otherwise route
 			s" /" path path:length compare 0= if  /. else
-				path path:length evaluate	( -- c-addr u )
+				path path:length evaluate	( -- s-addr u )
 			then
 		then
 		dup to response:length 		\ set the response length
